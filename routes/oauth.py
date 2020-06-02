@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import aiohttp
 import jwt
 from jwt import PyJWTError, ExpiredSignatureError
+from hashids import Hashids
 import config
 from schemas import User
 import models
@@ -16,10 +17,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 models.Base.metadata.create_all(bind=engine)
 
+hashids = Hashids(salt=config.ID_SECRET, min_length=6)
+
 
 @router.get("/login/discord", tags=["Login"])
-async def discord_login():
-    return RedirectResponse("https://discordapp.com/api/oauth2/authorize?client_id=594885334232334366&redirect_uri=http://127.0.0.1:8000/oauth/discord&response_type=code&scope=identify&prompt=none")
+def discord_login():
+    return RedirectResponse(f"https://discordapp.com/api/oauth2/authorize?client_id={config.CLIENT_ID}&redirect_uri={config.REDIRECT_URL}&response_type=code&scope=identify&prompt=none")
 
 
 @router.get("/oauth/discord", tags=["Oauth"])
@@ -40,34 +43,31 @@ async def discord_oauth(code: str, response: Response):
             resp = await r2.json()
         else:
             raise HTTPException(400, "Discord Oauth handle failed")
-    
-    #check if user exist
+
+    # check if user exist
     db = SessionLocal()
-    user_profile = db.query(models.User).filter(
-        models.User.id == "1-"+resp["id"]).first()
+    OauthDetail = db.query(models.OauthDetail).filter(
+        models.OauthDetail.platform == 1).filter(models.OauthDetail.id == resp["id"]).first()
 
     # not exist, create one
-    if not user_profile:
-        user_profile = models.User(
-            id="1-"+resp["id"], name=resp["username"], avatar=resp["avatar"])
-        db.add(user_profile)
+    if not OauthDetail:
+        newUser = models.User(avatar=f"https://cdn.discordapp.com/avatars/{resp['id']}/{resp['avatar']}.png", name=resp["username"])
+        db.add(newUser)
+        db.flush()
+        OauthDetail = models.OauthDetail(
+            platform=1, id=resp["id"], user_id=newUser.id)
+        db.add(OauthDetail)
         db.commit()
-        db.refresh(user_profile)
-    # update user's avatar & name
-    elif user_profile.avatar != resp["avatar"] or user_profile.name != resp["name"]:
-        user_profile.avatar = resp["avatar"]
-        user_profile.name = resp["name"]
-        db.commit()
-        db.refresh(user_profile)
+
     # create jwt token, expire after 7 days
     expire = datetime.utcnow() + timedelta(days=7)
-    user = jwt.encode({"id": "1-" + resp["id"], "exp": expire},
+    user = jwt.encode({"id": hashids.encode(OauthDetail.user_id), "exp": expire},
                       config.JWT_SECRET, algorithm='HS256').decode('utf-8')
     response.set_cookie('token', user, expires=30)
     return user
 
 
-async def get_current_user_id(token: str = Depends(oauth2_scheme)):
+def get_current_user_id(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, config.JWT_SECRET, algorithms='HS256')
     except ExpiredSignatureError:
@@ -76,4 +76,15 @@ async def get_current_user_id(token: str = Depends(oauth2_scheme)):
     except PyJWTError:
         raise HTTPException(401, "Could not validate credentials", {
                             "WWW-Authenticate": "Bearer"})
-    return payload["id"]
+    return hashids.decode(payload["id"])[0]
+
+
+def get_user_id(hashed_id: str):
+    user_id = hashids.decode(hashed_id)
+    if not user_id:
+        raise HTTPException(404, 'User not found')
+    return user_id[0]
+
+
+def get_hashed_id(user_id: int):
+    return hashids.encode(user_id)
