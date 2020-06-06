@@ -25,7 +25,7 @@ def discord_login():
     return RedirectResponse(f"https://discordapp.com/api/oauth2/authorize?client_id={config.CLIENT_ID}&redirect_uri={config.REDIRECT_URL}&response_type=code&scope=identify&prompt=none")
 
 
-@router.get("/oauth/discord", tags=["Oauth"])
+@router.post("/oauth/discord", tags=["Oauth"])
 async def discord_oauth(code: str, response: Response):
     data = {
         "client_id": config.CLIENT_ID,
@@ -61,10 +61,10 @@ async def discord_oauth(code: str, response: Response):
 
     # create jwt token, expire after 7 days
     expire = datetime.utcnow() + timedelta(days=7)
-    user = jwt.encode({"id": hashids.encode(OauthDetail.user_id), "exp": expire},
+    user_id = hashids.encode(OauthDetail.user_id)
+    token = jwt.encode({"id": user_id, "exp": expire},
                       config.JWT_SECRET, algorithm='HS256').decode('utf-8')
-    response.set_cookie('token', user, expires=30)
-    return user
+    return {"id": user_id, "token": token}
 
 
 def get_current_user_id(token: str = Depends(oauth2_scheme)):
