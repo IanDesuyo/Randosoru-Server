@@ -19,18 +19,6 @@ def get_db():
         db.close()
 
 
-# get user's records
-# def db_get_user_records(db: Session, user_id: int):
-#     user_records = db.query(models.Record).filter(
-#         models.Record.user_id == user_id).all()
-#     if not user_records:
-#         raise HTTPException(404, 'Record not found')
-#     return user_records
-
-# @router.get("/users/{user_id}/records")
-# def get_user_records(user_id: str = Path(None, min_length=10, max_length=35, regex="^[0-3]-.*$"), db: Session = Depends(get_db)):
-#     return db_get_user_records(db, user_id)
-
 # Get Profile
 
 
@@ -42,7 +30,7 @@ def db_get_user_profile(db: Session, user_id: int, me: bool = False):
     if user_profile.privacy != 0 and not me:
         raise HTTPException(403, 'User privacy blocked')
     user_profile.id = oauth.get_hashed_id(user_id)
-    return user_profile
+    return user_profile.as_dict()
 
 
 @router.get("/profile/users/me", response_model=UserProfile)

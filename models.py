@@ -1,6 +1,6 @@
 from sqlalchemy import ForeignKey, Boolean, Column, ForeignKey, Integer, String, DateTime, text
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy_utils import UUIDType
 import uuid
 
@@ -10,17 +10,24 @@ from database import Base
 class User(Base):
     __tablename__ = "Users"
 
-    id = Column(Integer, primary_key=True, unique=True, autoincrement=True, index=True)
+    id = Column(Integer, primary_key=True, unique=True,
+                autoincrement=True, index=True)
     avatar = Column(String, nullable=True)
     name = Column(String)
     uid = Column(Integer, nullable=True, index=True)
     created_at = Column(DateTime, server_default=func.now())
     privacy = Column(Integer, server_default=text('0'))
 
-    guild_id = Column(Integer, ForeignKey("Guilds.id"), nullable=True, index=True)
+    guild_id = Column(Integer, ForeignKey(
+        "Guilds.id"), nullable=True, index=True)
+    guild = relationship("Guild")
 
     def __repr__(self):
         return "<User (%s)>" % self.platform, self.id
+
+    def as_dict(self):
+        self.guild = self.guild
+        return self
 
 
 class OauthDetail(Base):
@@ -40,8 +47,8 @@ class Guild(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String)
     announcement = Column(String, nullable=True)
-    
-    owner_id = Column(Integer, ForeignKey("Users.id"))
+
+    # owner_id = Column(Integer, ForeignKey("Users.id"))
 
     def __repr__(self):
         return "<Guild (%s - %s)>" % self.id, self.name
@@ -58,7 +65,8 @@ class Record(Base):
     status = Column(Integer, server_default=text('10'))
     damage = Column(Integer)
     comment = Column(String, nullable=True)
-    last_modified = Column(DateTime, server_default=func.now(), server_onupdate=func.now())
+    last_modified = Column(
+        DateTime, server_default=func.now(), server_onupdate=func.now())
 
     def __repr__(self):
         return "<Record (%s - %s)>" % self.id, self.user_id
