@@ -1,4 +1,4 @@
-# Randosoru-Ssrver
+# Randosoru-Server
 
 Backend for guild.randosoru.me
 
