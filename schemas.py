@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from typing import List, Set, Optional, Union
 from datetime import datetime
 from uuid import UUID
@@ -15,9 +15,9 @@ class User(BaseModel):
 
 
 class Guild(BaseModel):
-    id: int
+    id: str
     name: str
-    announcement: str
+    announcement: str = None
 
     class Config:
         orm_mode = True
@@ -34,14 +34,21 @@ class UserProfile(User):
 
 class Record(BaseModel):
     id: int
-    guild_id: int
-    guild_week: int
+    guild_id: str
+    month: int
+    week: int
     boss: int
-    user_id: str
     status: int
-    damage: str
-    comment: str
+    damage: int = None
+    comment: str = None
     last_modified: datetime
+    user: User
 
     class Config:
         orm_mode = True
+
+class PostRecord(BaseModel):
+    boss: int
+    status: int
+    damage: int = None
+    comment: str = None

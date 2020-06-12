@@ -10,7 +10,7 @@ origins = [
 import config
 from routes import oauth, user, guild
 
-app = FastAPI()
+app = FastAPI(openapi_prefix="/api")
 
 #CORS
 app.add_middleware(

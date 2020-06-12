@@ -1,11 +1,9 @@
 from sqlalchemy import ForeignKey, Boolean, Column, ForeignKey, Integer, String, DateTime, text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy_utils import UUIDType
-import uuid
 
 from database import Base
-
+from routes import oauth
 
 class User(Base):
     __tablename__ = "Users"
@@ -18,7 +16,7 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
     privacy = Column(Integer, server_default=text('0'))
 
-    guild_id = Column(Integer, ForeignKey(
+    guild_id = Column(String, ForeignKey(
         "Guilds.id"), nullable=True, index=True)
     guild = relationship("Guild")
 
@@ -44,11 +42,10 @@ class OauthDetail(Base):
 class Guild(Base):
     __tablename__ = "Guilds"
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    id = Column(String, primary_key=True, index=True)
     name = Column(String)
     announcement = Column(String, nullable=True)
-
-    # owner_id = Column(Integer, ForeignKey("Users.id"))
+    access_token = Column(String, server_default=text('newyearburst'))
 
     def __repr__(self):
         return "<Guild (%s - %s)>" % self.id, self.name
@@ -58,10 +55,12 @@ class Record(Base):
     __tablename__ = "records"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    guild_id = Column(Integer, ForeignKey("Guilds.id"), index=True)
-    guild_week = Column(Integer)
+    guild_id = Column(String, ForeignKey("Guilds.id"), index=True)
+    month = Column(Integer)
+    week = Column(Integer)
     boss = Column(Integer)
     user_id = Column(Integer, ForeignKey("Users.id"), index=True)
+    user = relationship("User")
     status = Column(Integer, server_default=text('10'))
     damage = Column(Integer)
     comment = Column(String, nullable=True)
@@ -70,3 +69,8 @@ class Record(Base):
 
     def __repr__(self):
         return "<Record (%s - %s)>" % self.id, self.user_id
+    
+    def as_dict(self):
+        self.user = self.user
+        self.user.id = oauth.get_hashed_id(self.user.id)
+        return self
