@@ -7,7 +7,7 @@ import jwt
 from jwt import PyJWTError, ExpiredSignatureError
 from hashids import Hashids
 import config
-from schemas import User
+import schemas
 import models
 from database import SessionLocal, engine
 
@@ -20,13 +20,11 @@ models.Base.metadata.create_all(bind=engine)
 hashids = Hashids(salt=config.ID_SECRET, min_length=6)
 
 
-@router.get("/login/discord", tags=["Login"])
-def discord_login():
-    return RedirectResponse(f"https://discordapp.com/api/oauth2/authorize?client_id={config.CLIENT_ID}&redirect_uri={config.REDIRECT_URL}&response_type=code&scope=identify&prompt=none")
-
-
-@router.post("/oauth/discord", tags=["Oauth"])
+@router.post("/oauth/discord", response_model=schemas.OauthReturn, tags=["Oauth"])
 async def discord_oauth(code: str, response: Response):
+    """
+    For Discord Oauth
+    """
     data = {
         "client_id": config.CLIENT_ID,
         "client_secret": config.CLIENT_SECRET,
@@ -51,19 +49,24 @@ async def discord_oauth(code: str, response: Response):
 
     # not exist, create one
     if not OauthDetail:
-        newUser = models.User(avatar=f"https://cdn.discordapp.com/avatars/{resp['id']}/{resp['avatar']}.png", name=resp["username"])
+        newUser = models.User(
+            avatar=f"https://cdn.discordapp.com/avatars/{resp['id']}/{resp['avatar']}.png", name=resp["username"])
         db.add(newUser)
         db.flush()
         OauthDetail = models.OauthDetail(
             platform=1, id=resp["id"], user_id=newUser.id)
         db.add(OauthDetail)
         db.commit()
+    # check if user have been banned
+    else:
+        if OauthDetail.user.status != 0:
+            raise HTTPException(403, "You have been banned")
 
     # create jwt token, expire after 7 days
     expire = datetime.utcnow() + timedelta(days=7)
     user_id = hashids.encode(OauthDetail.user_id)
     token = jwt.encode({"id": user_id, "exp": expire},
-                      config.JWT_SECRET, algorithm='HS256').decode('utf-8')
+                       config.JWT_SECRET, algorithm='HS256').decode('utf-8')
     return {"id": user_id, "token": token}
 
 

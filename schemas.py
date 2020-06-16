@@ -1,13 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, PositiveInt
 from typing import List, Set, Optional, Union
 from datetime import datetime
 from uuid import UUID
+
+class OauthReturn(BaseModel):
+    id: str
+    token: str
 
 
 class User(BaseModel):
     id: str
     avatar: str = "https://i.imgur.com/e4KrYHe.png"
-    name: str = "Unknown"
+    name: str
     uid: int = None
 
     class Config:
@@ -25,7 +29,7 @@ class Guild(BaseModel):
 
 class UserProfile(User):
     created_at: datetime
-    privacy: int = 2
+    privacy: int
     guild: Guild = None
 
     class Config:
@@ -35,9 +39,9 @@ class UserProfile(User):
 class Record(BaseModel):
     id: int
     guild_id: str
-    month: int
-    week: int
-    boss: int
+    # month: int
+    # week: int
+    # boss: int
     status: int
     damage: int = None
     comment: str = None
@@ -48,7 +52,11 @@ class Record(BaseModel):
         orm_mode = True
 
 class PostRecord(BaseModel):
-    boss: int
-    status: int
-    damage: int = None
+    id: PositiveInt = None
+    status: PositiveInt
+    damage: PositiveInt = None
     comment: str = None
+
+class PostSucess(BaseModel):
+    target_id: str = None
+    detail: str = "Sucess"

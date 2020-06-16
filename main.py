@@ -1,5 +1,8 @@
+from routes import oauth, user, guild
+import config
 from fastapi import FastAPI, Query, Path, Body, HTTPException, Depends
-#CORS
+
+# CORS
 from fastapi.middleware.cors import CORSMiddleware
 origins = [
     "http://localhost",
@@ -7,12 +10,14 @@ origins = [
     "https://test.randosoru.me"
 ]
 #
-import config
-from routes import oauth, user, guild
 
-app = FastAPI(openapi_prefix="/api")
+app = FastAPI(openapi_prefix="/api",
+              title="Randosoru",
+              description="API documents for guild.randosoru.me",
+              version="0.1.0",
+              )
 
-#CORS
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

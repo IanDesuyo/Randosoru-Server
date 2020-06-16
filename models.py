@@ -15,7 +15,7 @@ class User(Base):
     uid = Column(Integer, nullable=True, index=True)
     created_at = Column(DateTime, server_default=func.now())
     privacy = Column(Integer, server_default=text('0'))
-
+    status = Column(Integer, server_default=text('0'))
     guild_id = Column(String, ForeignKey(
         "Guilds.id"), nullable=True, index=True)
     guild = relationship("Guild")
@@ -34,6 +34,7 @@ class OauthDetail(Base):
     platform = Column(Integer)
     id = Column(String, primary_key=True, unique=True, index=True)
     user_id = Column(Integer, ForeignKey("Users.id"))
+    user = relationship("User")
 
     def __repr__(self):
         return "<OauthDetail (%s-%s)>" % self.platform, self.id
