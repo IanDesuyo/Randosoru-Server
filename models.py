@@ -73,5 +73,5 @@ class Record(Base):
     
     def as_dict(self):
         self.user = self.user
-        self.user.id = oauth.get_hashed_id(self.user.id)
+        self.user.id = oauth.get_hashed_id(self.user_id)
         return self

@@ -26,15 +26,15 @@ async def discord_oauth(code: str, response: Response):
     For Discord Oauth
     """
     data = {
-        "client_id": config.CLIENT_ID,
-        "client_secret": config.CLIENT_SECRET,
+        "client_id": config.Discord.CLIENT_ID,
+        "client_secret": config.Discord.CLIENT_SECRET,
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": config.REDIRECT_URL,
+        "redirect_uri": config.Discord.REDIRECT_URL,
         "scope": "identify email connections"
     }
     async with aiohttp.ClientSession() as session:
-        r1 = await session.post(config.API_ENDPOINT + "/oauth2/token", data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        r1 = await session.post(config.Discord.API_ENDPOINT + "/oauth2/token", data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
         resp = await r1.json()
         if resp.get("access_token") != None:
             r2 = await session.get("https://discordapp.com/api/users/@me", headers={"Authorization": "Bearer " + resp["access_token"]})
@@ -55,6 +55,55 @@ async def discord_oauth(code: str, response: Response):
         db.flush()
         OauthDetail = models.OauthDetail(
             platform=1, id=resp["id"], user_id=newUser.id)
+        db.add(OauthDetail)
+        db.commit()
+    # check if user have been banned
+    else:
+        if OauthDetail.user.status != 0:
+            raise HTTPException(403, "You have been banned")
+
+    # create jwt token, expire after 7 days
+    expire = datetime.utcnow() + timedelta(days=7)
+    user_id = hashids.encode(OauthDetail.user_id)
+    token = jwt.encode({"id": user_id, "exp": expire},
+                       config.JWT_SECRET, algorithm='HS256').decode('utf-8')
+    return {"id": user_id, "token": token}
+
+
+@router.post("/oauth/line", response_model=schemas.OauthReturn, tags=["Oauth"])
+async def line_oauth(code: str, response: Response):
+    """
+    For Line Oauth
+    """
+    data = {
+        "client_id": config.Line.CLIENT_ID,
+        "client_secret": config.Line.CLIENT_SECRET,
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": config.Line.REDIRECT_URL
+    }
+    async with aiohttp.ClientSession() as session:
+        r1 = await session.post(config.Line.API_ENDPOINT + "/oauth/accessToken", data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        resp = await r1.json()
+        if resp.get("access_token") != None:
+            r2 = await session.get("https://api.line.me/v2/profile", headers={"Authorization": "Bearer " + resp["access_token"]})
+            resp = await r2.json()
+        else:
+            raise HTTPException(400, "Discord Oauth handle failed")
+
+    # check if user exist
+    db = SessionLocal()
+    OauthDetail = db.query(models.OauthDetail).filter(
+        models.OauthDetail.platform == 2).filter(models.OauthDetail.id == resp["userId"]).first()
+
+    # not exist, create one
+    if not OauthDetail:
+        newUser = models.User(
+            avatar=f"{resp['pictureUrl']}.png", name=resp["displayName"])
+        db.add(newUser)
+        db.flush()
+        OauthDetail = models.OauthDetail(
+            platform=2, id=resp["userId"], user_id=newUser.id)
         db.add(OauthDetail)
         db.commit()
     # check if user have been banned

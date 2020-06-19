@@ -71,7 +71,8 @@ def post_guild_record(guild_id: str = Path(None, min_length=18, max_length=32),
             models.Record.month == month).filter(
             models.Record.week == week).filter(
             models.Record.user_id == user_id).filter(
-            models.Record.id == record.id).first()
+            models.Record.id == record.id).filter(
+            models.Record.status != 99).first()
         if not record_data:
             raise HTTPException(404, 'Record not found')
         if record.status != record_data.status:
