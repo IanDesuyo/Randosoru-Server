@@ -1,9 +1,11 @@
 from sqlalchemy import ForeignKey, Boolean, Column, ForeignKey, Integer, String, DateTime, text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, backref
-
+from datetime import timezone, datetime
 from database import Base
 from routes import oauth
+import uuid
+
 
 class User(Base):
     __tablename__ = "Users"
@@ -24,8 +26,9 @@ class User(Base):
         return "<User (%s)>" % self.platform, self.id
 
     def as_dict(self):
+        self.created_at = int(self.created_at.timestamp())+28800
         self.guild = self.guild
-        return self
+        return self.__dict__
 
 
 class OauthDetail(Base):
@@ -51,12 +54,31 @@ class Guild(Base):
     def __repr__(self):
         return "<Guild (%s - %s)>" % self.id, self.name
 
+class Form(Base):
+    __tablename__ = "Forms"
+
+    id = Column(String, primary_key=True, unique=True, index=True)
+    owner_id = Column(Integer, ForeignKey("Users.id"))
+    month = Column(Integer)
+    title = Column(String, server_default="unknow")
+    description = Column(String, nullable=True)
+    status = Column(Integer, server_default=text('0'))
+    created_at = Column(DateTime, server_default=func.now())
+
+    def __repr__(self):
+        return "<Form (%s - %s)>" % self.id, self.owner_id
+
+    def as_dict(self):
+        self.created_at = int(self.created_at.timestamp())+28800
+        # self.owner_id = oauth.get_hashed_id(self.owner_id)
+        return self.__dict__
+
 
 class Record(Base):
-    __tablename__ = "records"
+    __tablename__ = "Records"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    guild_id = Column(String, ForeignKey("Guilds.id"), index=True)
+    form_id = Column(String, ForeignKey("Forms.id"), index=True)
     month = Column(Integer)
     week = Column(Integer)
     boss = Column(Integer)
@@ -70,8 +92,9 @@ class Record(Base):
 
     def __repr__(self):
         return "<Record (%s - %s)>" % self.id, self.user_id
-    
+
     def as_dict(self):
+        self.last_modified = int(self.last_modified.timestamp())+28800
         self.user = self.user
         self.user.id = oauth.get_hashed_id(self.user_id)
-        return self
+        return self.__dict__

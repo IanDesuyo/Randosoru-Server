@@ -1,4 +1,4 @@
-from routes import oauth, user, guild
+from routes import oauth, user, guild, form
 import config
 from fastapi import FastAPI, Query, Path, Body, HTTPException, Depends
 
@@ -30,4 +30,5 @@ app.add_middleware(
 
 app.include_router(oauth.router)
 app.include_router(user.router)
-app.include_router(guild.router)
+# app.include_router(guild.router)
+app.include_router(form.router)
