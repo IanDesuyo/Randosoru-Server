@@ -19,19 +19,10 @@ class User(BaseModel):
         orm_mode = True
 
 
-class Guild(BaseModel):
-    id: str
-    name: str
-    announcement: str = None
-
-    class Config:
-        orm_mode = True
-
-
 class UserProfile(User):
     created_at: PositiveInt
     privacy: int
-    guild: Guild = None
+    guild_name: str = None
 
     class Config:
         orm_mode = True
@@ -54,6 +45,12 @@ class RecordStatus(int, Enum):
     deleted = 99
 
 
+class RecordTeam(BaseModel):
+    id: PositiveInt
+    star: int = Field(None, ge=1, le=6)
+    rank: str = None
+
+
 class Record(BaseModel):
     id: PositiveInt
     # form_id: str
@@ -63,6 +60,7 @@ class Record(BaseModel):
     status: int
     damage: PositiveInt = None
     comment: str = None
+    team: List[RecordTeam] = None
     last_modified: PositiveInt
     user: User
 
@@ -74,8 +72,8 @@ class PostRecord(BaseModel):
     month: str = Field(None, regex="^(20\d{2})(1[0-2]|0[1-9])$")
     id: PositiveInt = None
     status: RecordStatus
-    damage: PositiveInt = None
-    comment: str = None
+    damage: int = Field(None, ge=1, le=50000000)
+    comment: str = Field(None, max_length=40)
 
 
 class PostSucess(BaseModel):
@@ -91,15 +89,15 @@ class FormStatus(int, Enum):
 
 class CreateForm(BaseModel):
     month: str = Field(None, regex="^(20\d{2})(1[0-2]|0[1-9])$")
-    title: str
-    description: str = None
+    title: str = Field(None, max_length=20)
+    description: str = Field(None, max_length=40)
 
 
 class EditForm(BaseModel):
     id: str = Field(None, regex="^[0-9a-fA-F]{32}$")
     month: str = Field(None, regex="^(20\d{2})(1[0-2]|0[1-9])$")
-    title: str = None
-    description: str = None
+    title: str = Field(None, max_length=20)
+    description: str = Field(None, max_length=40)
     status: FormStatus = None
 
 

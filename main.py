@@ -1,4 +1,4 @@
-from routes import oauth, user, guild, form
+from routes import oauth, user, bot, form
 import config
 from fastapi import FastAPI, Query, Path, Body, HTTPException, Depends
 
@@ -14,7 +14,7 @@ origins = [
 app = FastAPI(openapi_prefix="/api",
               title="Randosoru",
               description="API documents for guild.randosoru.me",
-              version="0.1.0",
+              version="0.2.0",
               )
 
 # CORS
@@ -30,5 +30,5 @@ app.add_middleware(
 
 app.include_router(oauth.router)
 app.include_router(user.router)
-# app.include_router(guild.router)
 app.include_router(form.router)
+app.include_router(bot.router)

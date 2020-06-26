@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Response, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
-from fastapi.responses import RedirectResponse
+from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import aiohttp
 import jwt
@@ -20,8 +20,41 @@ models.Base.metadata.create_all(bind=engine)
 hashids = Hashids(salt=config.ID_SECRET, min_length=6)
 
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def get_current_user_id(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, config.JWT_SECRET, algorithms='HS256')
+    except ExpiredSignatureError:
+        raise HTTPException(401, "Credentials expired", {
+                            "WWW-Authenticate": "Bearer"})
+    except PyJWTError:
+        raise HTTPException(401, "Could not validate credentials", {
+                            "WWW-Authenticate": "Bearer"})
+    return hashids.decode(payload["id"])[0]
+
+
+def get_user_id(hashed_id: str):
+    user_id = hashids.decode(hashed_id)
+    if not user_id:
+        raise HTTPException(404, 'User not found')
+    return user_id[0]
+
+
+def get_hashed_id(user_id: int):
+    return hashids.encode(user_id)
+
+# Router
+
+
 @router.post("/oauth/discord", response_model=schemas.OauthReturn, tags=["Oauth"])
-async def discord_oauth(code: str, response: Response):
+async def discord_oauth(code: str, db: Session = Depends(get_db)):
     """
     For Discord Oauth
     """
@@ -43,7 +76,6 @@ async def discord_oauth(code: str, response: Response):
             raise HTTPException(400, "Discord Oauth handle failed")
 
     # check if user exist
-    db = SessionLocal()
     OauthDetail = db.query(models.OauthDetail).filter(
         models.OauthDetail.platform == 1).filter(models.OauthDetail.id == resp["id"]).first()
 
@@ -71,7 +103,7 @@ async def discord_oauth(code: str, response: Response):
 
 
 @router.post("/oauth/line", response_model=schemas.OauthReturn, tags=["Oauth"])
-async def line_oauth(code: str, response: Response):
+async def line_oauth(code: str, db: Session = Depends(get_db)):
     """
     For Line Oauth
     """
@@ -92,7 +124,6 @@ async def line_oauth(code: str, response: Response):
             raise HTTPException(400, "Discord Oauth handle failed")
 
     # check if user exist
-    db = SessionLocal()
     OauthDetail = db.query(models.OauthDetail).filter(
         models.OauthDetail.platform == 2).filter(models.OauthDetail.id == resp["userId"]).first()
 
@@ -117,26 +148,3 @@ async def line_oauth(code: str, response: Response):
     token = jwt.encode({"id": user_id, "exp": expire},
                        config.JWT_SECRET, algorithm='HS256').decode('utf-8')
     return {"id": user_id, "token": token}
-
-
-def get_current_user_id(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, config.JWT_SECRET, algorithms='HS256')
-    except ExpiredSignatureError:
-        raise HTTPException(401, "Credentials expired", {
-                            "WWW-Authenticate": "Bearer"})
-    except PyJWTError:
-        raise HTTPException(401, "Could not validate credentials", {
-                            "WWW-Authenticate": "Bearer"})
-    return hashids.decode(payload["id"])[0]
-
-
-def get_user_id(hashed_id: str):
-    user_id = hashids.decode(hashed_id)
-    if not user_id:
-        raise HTTPException(404, 'User not found')
-    return user_id[0]
-
-
-def get_hashed_id(user_id: int):
-    return hashids.encode(user_id)

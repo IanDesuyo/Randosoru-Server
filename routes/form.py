@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Response, HTTPException, Depends, Path, Header
+from fastapi import APIRouter, HTTPException, Depends, Path
 from sqlalchemy.orm import Session
+from datetime import datetime
 import uuid
 import config
 import schemas
@@ -36,7 +37,7 @@ def get_form(form_id: str = Path(None, regex="^[0-9a-fA-F]{32}$"),
     return form.as_dict()
 
 
-@router.post("/forms/create", response_model=schemas.Form, tags=["Forms"])
+@router.post("/forms/create", response_model=schemas.Form, tags=["Forms"], deprecated=True)
 def create_form(data: schemas.CreateForm = None,
                 user_id: int = Depends(oauth.get_current_user_id),
                 db: Session = Depends(get_db)):
@@ -52,7 +53,7 @@ def create_form(data: schemas.CreateForm = None,
     return new_form.as_dict()
 
 
-@router.post("/forms/modify", response_model=schemas.Form, tags=["Forms"])
+@router.post("/forms/modify", response_model=schemas.Form, tags=["Forms"], deprecated=True)
 def modify_form(data: schemas.EditForm = None,
                 user_id: int = Depends(oauth.get_current_user_id),
                 db: Session = Depends(get_db)):
@@ -122,6 +123,7 @@ def post_form_record(form_id: str = Path(None, regex="^[0-9a-fA-F]{32}$"),
         record_data.status = record.status
         record_data.damage = record.damage
         record_data.comment = record.comment
+        record_data.last_modified = datetime.utcnow()
         db.commit()
         return record_data.as_dict()
     else:
