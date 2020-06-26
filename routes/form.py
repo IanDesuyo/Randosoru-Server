@@ -92,8 +92,6 @@ def get_form_record(form_id: str = Path(None, regex="^[0-9a-fA-F]{32}$"),
         models.Record.week == week).filter(
         models.Record.boss == boss).filter(
         models.Record.status != 99).all()
-    if not records:
-        raise HTTPException(200, [])
     return [i.as_dict() for i in records]
 
 

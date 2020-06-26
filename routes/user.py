@@ -72,6 +72,4 @@ def get_my_records(user_id: int = Depends(oauth.get_current_user_id), page: int 
     """
     records = db.query(models.Record).filter(
         models.Record.user_id == user_id).all().limit(10).offset((page-1)*10)
-    if not records:
-        raise HTTPException(404, 'Record not found')
     return {i.as_dict() for i in records}
