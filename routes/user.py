@@ -42,7 +42,7 @@ def get_my_profile(user_id: int = Depends(oauth.get_current_user_id), db: Sessio
 
 
 @router.get("/profile/users/{user_id}", response_model=schemas.UserProfile, tags=["Users"])
-def get_user_profile(user_id: str = Path(None, min_length=6, max_length=16), db: Session = Depends(get_db)):
+def get_user_profile(user_id: str = Path(..., min_length=6, max_length=16), db: Session = Depends(get_db)):
     """
     Get specific user profile by user_id
     """
@@ -58,7 +58,7 @@ def get_my_profile_slim(user_id: int = Depends(oauth.get_current_user_id), db: S
 
 
 @router.get("/users/{user_id}", response_model=schemas.User, tags=["Users"])
-def get_user_profile_slim(user_id: str = Path(None, min_length=6, max_length=16), db: Session = Depends(get_db)):
+def get_user_profile_slim(user_id: str = Path(..., min_length=6, max_length=16), db: Session = Depends(get_db)):
     """
     Get specific user profile by user_id (only id, avatar ,name and uid)
     """

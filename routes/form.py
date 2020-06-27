@@ -25,7 +25,7 @@ def get_db():
 
 
 @router.get("/forms/{form_id}", response_model=schemas.Form, tags=["Forms"])
-def get_form(form_id: str = Path(None, regex="^[0-9a-fA-F]{32}$"),
+def get_form(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
              db: Session = Depends(get_db)):
     """
     Get form details
@@ -42,8 +42,10 @@ def create_form(data: schemas.CreateForm = None,
                 user_id: int = Depends(oauth.get_current_user_id),
                 db: Session = Depends(get_db)):
     """
+    **deprecated**\n
     Create a new form
     """
+    raise HTTPException(400, "Deprecated")
     if not data:
         raise HTTPException(400, "Missing Form data")
     new_form = models.Form(month=data.month, owner_id=user_id,
@@ -58,8 +60,10 @@ def modify_form(data: schemas.EditForm = None,
                 user_id: int = Depends(oauth.get_current_user_id),
                 db: Session = Depends(get_db)):
     """
+    **deprecated**\n
     Modify form
     """
+    raise HTTPException(400, "Deprecated")
     if not data:
         raise HTTPException(400, "Missing Form data")
     form = db.query(models.Form).filter(
@@ -80,9 +84,9 @@ def modify_form(data: schemas.EditForm = None,
 
 
 @ router.get("/forms/{form_id}/week/{week}/boss/{boss}", response_model=List[schemas.Record], tags=["Forms", "Records"])
-def get_form_record(form_id: str = Path(None, regex="^[0-9a-fA-F]{32}$"),
-                    week: int = Path(None, ge=1, lt=100),
-                    boss: int = Path(None, ge=1, le=5),
+def get_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
+                    week: int = Path(..., ge=1, lt=100),
+                    boss: int = Path(..., ge=1, le=5),
                     db: Session = Depends(get_db)):
     """
     Get specific form"s records
@@ -96,9 +100,9 @@ def get_form_record(form_id: str = Path(None, regex="^[0-9a-fA-F]{32}$"),
 
 
 @router.post("/forms/{form_id}/week/{week}/boss/{boss}", response_model=schemas.Record, tags=["Forms", "Records"])
-def post_form_record(form_id: str = Path(None, regex="^[0-9a-fA-F]{32}$"),
-                     week: int = Path(None, ge=1, lt=100),
-                     boss: int = Path(None, ge=1, le=5),
+def post_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
+                     week: int = Path(..., ge=1, lt=100),
+                     boss: int = Path(..., ge=1, le=5),
                      record: schemas.PostRecord = None,
                      user_id: int = Depends(oauth.get_current_user_id),
                      db: Session = Depends(get_db)):
@@ -108,6 +112,11 @@ def post_form_record(form_id: str = Path(None, regex="^[0-9a-fA-F]{32}$"),
     """
     if not record:
         raise HTTPException(400, "Missing Record data")
+    formData = db.query(models.Form).filter(models.Form.id == form_id).first()
+    if not formData:
+        raise HTTPException(404, "Form not found")
+    if formData.status != 0:
+        raise HTTPException(403, "Form locked")
 
     if record.id:
         record_data = db.query(models.Record).filter(
@@ -118,7 +127,7 @@ def post_form_record(form_id: str = Path(None, regex="^[0-9a-fA-F]{32}$"),
             models.Record.status != 99).first()
         if not record_data:
             raise HTTPException(404, "Record not found")
-        record_data.status = record.status
+        record_data.status = record.status.value
         record_data.damage = record.damage
         record_data.comment = record.comment
         record_data.last_modified = datetime.utcnow()
@@ -126,7 +135,7 @@ def post_form_record(form_id: str = Path(None, regex="^[0-9a-fA-F]{32}$"),
         return record_data.as_dict()
     else:
         record_data = models.Record(form_id=form_id, month=record.month, week=week, boss=boss,
-                                    status=record.status, damage=record.damage, comment=record.comment, user_id=user_id)
+                                    status=record.status.value, damage=record.damage, comment=record.comment, user_id=user_id)
         db.add(record_data)
         db.commit()
     return record_data.as_dict()

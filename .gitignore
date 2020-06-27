@@ -4,3 +4,4 @@ __pycache__
 .vscode
 app.db
 config.py
+database.py
