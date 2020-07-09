@@ -98,12 +98,22 @@ def get_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
         models.Record.status != 99).all()
     return [i.as_dict() for i in records]
 
+@ router.get("/forms/{form_id}/all", response_model=List[schemas.AllRecord], tags=["Forms", "Records"])
+def get_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
+                    db: Session = Depends(get_db)):
+    """
+    Get all records from specific form id
+    """
+    records = db.query(models.Record).filter(
+        models.Record.form_id == form_id).filter(
+        models.Record.status != 99).all()
+    return [i.as_dict() for i in records]
 
 @router.post("/forms/{form_id}/week/{week}/boss/{boss}", response_model=schemas.Record, tags=["Forms", "Records"])
 def post_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
                      week: int = Path(..., ge=1, lt=100),
                      boss: int = Path(..., ge=1, le=5),
-                     record: schemas.PostRecord = None,
+                     record: schemas.PostRecord = ...,
                      user_id: int = Depends(oauth.get_current_user_id),
                      db: Session = Depends(get_db)):
     """

@@ -14,7 +14,7 @@ origins = [
 app = FastAPI(openapi_prefix="/api",
               title="Randosoru",
               description="API documents for guild.randosoru.me",
-              version="0.2.1",
+              version="0.2.2",
               docs_url=None,
               redoc_url="/doc"
               )

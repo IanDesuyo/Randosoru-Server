@@ -53,10 +53,6 @@ class RecordTeam(BaseModel):
 
 class Record(BaseModel):
     id: PositiveInt
-    # form_id: str
-    # month: int
-    # week: int
-    # boss: int
     status: int
     damage: PositiveInt = None
     comment: str = None
@@ -66,6 +62,11 @@ class Record(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class AllRecord(Record):
+    week: int
+    boss: int
 
 
 class PostRecord(BaseModel):
@@ -88,8 +89,8 @@ class FormStatus(int, Enum):
 
 
 class CreateForm(BaseModel):
-    month: str = Field(None, regex="^(20\d{2})(1[0-2]|0[1-9])$")
-    title: str = Field(None, max_length=20)
+    month: str = Field(..., regex="^(20\d{2})(1[0-2]|0[1-9])$")
+    title: str = Field(..., max_length=20)
     description: str = Field(None, max_length=40)
 
 
@@ -104,3 +105,13 @@ class EditForm(BaseModel):
 class Form(CreateForm):
     id: str = Field(None, regex="^[0-9a-fA-F]{32}$")
     status: FormStatus
+
+
+class CheckRegister(BaseModel):
+    platform: int = Field(..., ge=1, le=2)
+    user_id: str = Field(..., min_length=18, max_length=40)
+
+
+class BotRegister(CheckRegister):
+    avatar: str = Field(None, max_length=140)
+    name: str = Field(..., max_length=40)

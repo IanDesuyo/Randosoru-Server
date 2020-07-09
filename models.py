@@ -25,6 +25,7 @@ class User(Base):
 
     def as_dict(self):
         self.created_at = int(self.created_at.timestamp())+28800
+        self.id = oauth.get_hashed_id(self.id)
         return self.__dict__
 
 
@@ -45,7 +46,7 @@ class Form(Base):
     id = Column(String(32), primary_key=True, unique=True, index=True)
     owner_id = Column(Integer, ForeignKey("Users.id"))
     month = Column(Integer)
-    title = Column(String(20), server_default="unknow")
+    title = Column(String(20), server_default="unknown")
     description = Column(String(40), nullable=True)
     status = Column(Integer, server_default=text('0'))
     created_at = Column(DateTime, server_default=func.now())
