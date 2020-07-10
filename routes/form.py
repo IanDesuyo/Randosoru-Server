@@ -100,6 +100,7 @@ def get_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
 
 @ router.get("/forms/{form_id}/all", response_model=List[schemas.AllRecord], tags=["Forms", "Records"])
 def get_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
+                    user_id: int = Depends(oauth.get_current_user_id),
                     db: Session = Depends(get_db)):
     """
     Get all records from specific form id

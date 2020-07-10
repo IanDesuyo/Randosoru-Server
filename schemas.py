@@ -38,9 +38,10 @@ class RecordStatus(int, Enum):
     waiting = 12
     waitingMention = 13
     # report
-    complete = 21
-    dead = 22
-    needHelp = 23
+    completeFormal = 21
+    completeReimburse = 22
+    dead = 23
+    needHelp = 24
     # delete
     deleted = 99
 
@@ -73,7 +74,7 @@ class PostRecord(BaseModel):
     month: str = Field(None, regex="^(20\d{2})(1[0-2]|0[1-9])$")
     id: PositiveInt = None
     status: RecordStatus
-    damage: int = Field(None, ge=1, le=50000000)
+    damage: int = Field(None, ge=1, le=20000000)
     comment: str = Field(None, max_length=40)
 
 
