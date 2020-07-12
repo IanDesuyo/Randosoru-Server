@@ -29,7 +29,6 @@ def db_get_user_profile(db: Session, user_id: int, me: bool = False, response_mo
         raise HTTPException(404, 'User not found')
     if user_profile.privacy != 0 and not me:
         raise HTTPException(403, 'User privacy blocked')
-    user_profile.id = oauth.get_hashed_id(user_id)
     return user_profile.as_dict()
 
 
