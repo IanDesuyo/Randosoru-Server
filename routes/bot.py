@@ -151,6 +151,4 @@ def register_new_user(x_token: bool = Depends(check_x_token),
             platform=2, id=user_data.user_id, user_id=newUser.id)
         db.add(OauthDetail)
         db.commit()
-        temp = newUser.as_dict()
-        temp["id"] = oauth.get_hashed_id(temp["id"])
-        return temp
+        return newUser.as_dict()

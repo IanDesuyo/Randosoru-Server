@@ -64,10 +64,11 @@ class Record(BaseModel):
     class Config:
         orm_mode = True
 
-
-class AllRecord(Record):
-    week: int
+class WeekRecord(Record):
     boss: int
+
+class AllRecord(WeekRecord):
+    week: int
 
 
 class PostRecord(BaseModel):

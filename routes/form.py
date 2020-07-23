@@ -83,6 +83,19 @@ def modify_form(data: schemas.EditForm = None,
     return form.as_dict()
 
 
+@ router.get("/forms/{form_id}/week/{week}", response_model=List[schemas.WeekRecord], tags=["Forms", "Records"])
+def get_form_record_by_week(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
+                    week: int = Path(..., ge=1, lt=100),
+                    db: Session = Depends(get_db)):
+    """
+    Get specific form"s records with specific week
+    """
+    records = db.query(models.Record).filter(
+        models.Record.form_id == form_id).filter(
+        models.Record.week == week).filter(
+        models.Record.status != 99).all()
+    return [i.as_dict() for i in records]
+
 @ router.get("/forms/{form_id}/week/{week}/boss/{boss}", response_model=List[schemas.Record], tags=["Forms", "Records"])
 def get_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
                     week: int = Path(..., ge=1, lt=100),
