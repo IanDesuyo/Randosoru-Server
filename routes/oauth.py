@@ -121,7 +121,45 @@ async def line_oauth(code: str, db: Session = Depends(get_db)):
             r2 = await session.get("https://api.line.me/v2/profile", headers={"Authorization": "Bearer " + resp["access_token"]})
             resp = await r2.json()
         else:
-            raise HTTPException(400, "Discord Oauth handle failed")
+            raise HTTPException(400, "Line Oauth handle failed")
+
+    # check if user exist
+    OauthDetail = db.query(models.OauthDetail).filter(
+        models.OauthDetail.platform == 2).filter(models.OauthDetail.id == resp["userId"]).first()
+
+    # not exist, create one
+    if not OauthDetail:
+        newUser = models.User(
+            avatar=f"{resp['pictureUrl']}.png", name=resp["displayName"])
+        db.add(newUser)
+        db.flush()
+        OauthDetail = models.OauthDetail(
+            platform=2, id=resp["userId"], user_id=newUser.id)
+        db.add(OauthDetail)
+        db.commit()
+    # check if user have been banned
+    else:
+        if OauthDetail.user.status != 0:
+            raise HTTPException(403, "You have been banned")
+
+    # create jwt token, expire after 7 days
+    expire = datetime.utcnow() + timedelta(days=7)
+    user_id = hashids.encode(OauthDetail.user_id)
+    token = jwt.encode({"id": user_id, "exp": expire},
+                       config.JWT_SECRET, algorithm='HS256').decode('utf-8')
+    return {"id": user_id, "token": token}
+
+
+@router.post("/oauth/line_liff", response_model=schemas.OauthReturn, tags=["Oauth"])
+async def line_liff_oauth(access_token: str, db: Session = Depends(get_db)):
+    """
+    Line Liff Login
+    """
+    async with aiohttp.ClientSession() as session:
+        r1 = await session.get("https://api.line.me/v2/profile", headers={"Authorization": "Bearer " + access_token})
+        resp = await r1.json()
+        if resp.get("userId") == None:
+            raise HTTPException(400, "Line Oauth handle failed")
 
     # check if user exist
     OauthDetail = db.query(models.OauthDetail).filter(
