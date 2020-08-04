@@ -85,7 +85,7 @@ def modify_form(data: schemas.EditForm = None,
 
 @ router.get("/forms/{form_id}/week/{week}", response_model=List[schemas.WeekRecord], tags=["Forms", "Records"])
 def get_form_record_by_week(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
-                    week: int = Path(..., ge=1, lt=100),
+                    week: int = Path(..., ge=1, le=100),
                     db: Session = Depends(get_db)):
     """
     Get specific form"s records with specific week
@@ -98,7 +98,7 @@ def get_form_record_by_week(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
 
 @ router.get("/forms/{form_id}/week/{week}/boss/{boss}", response_model=List[schemas.Record], tags=["Forms", "Records"])
 def get_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
-                    week: int = Path(..., ge=1, lt=100),
+                    week: int = Path(..., ge=1, le=100),
                     boss: int = Path(..., ge=1, le=5),
                     db: Session = Depends(get_db)):
     """
@@ -125,7 +125,7 @@ def get_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
 
 @router.post("/forms/{form_id}/week/{week}/boss/{boss}", response_model=schemas.Record, tags=["Forms", "Records"])
 def post_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
-                     week: int = Path(..., ge=1, lt=100),
+                     week: int = Path(..., ge=1, le=100),
                      boss: int = Path(..., ge=1, le=5),
                      record: schemas.PostRecord = ...,
                      user_id: int = Depends(oauth.get_current_user_id),
