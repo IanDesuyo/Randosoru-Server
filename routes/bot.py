@@ -26,17 +26,21 @@ def check_x_token(x_token: str = Header(...)):
     if not x_token in config.API_TOKEN:
         raise HTTPException(403, "Forbidden")
     return True
+
+
 # Router
 
 
 @router.post("/bot/forms/{form_id}/week/{week}/boss/{boss}", response_model=schemas.Record, tags=["Bot"])
-def post_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
-                     week: int = Path(..., ge=1, le=100),
-                     boss: int = Path(..., ge=1, le=5),
-                     x_token: bool = Depends(check_x_token),
-                     record: schemas.PostRecord = ...,
-                     user_id: str = Query(..., min_length=6, max_length=16),
-                     db: Session = Depends(get_db)):
+def post_form_record(
+    form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
+    week: int = Path(..., ge=1, le=100),
+    boss: int = Path(..., ge=1, le=5),
+    x_token: bool = Depends(check_x_token),
+    record: schemas.PostRecord = ...,
+    user_id: str = Query(..., min_length=6, max_length=16),
+    db: Session = Depends(get_db),
+):
     """
     Add or update a record\n
     It will try to update exist record if request include an id. 
@@ -51,12 +55,15 @@ def post_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
         raise HTTPException(403, "Form locked")
 
     if record.id:
-        record_data = db.query(models.Record).filter(
-            models.Record.form_id == form_id).filter(
-            models.Record.week == week).filter(
-            models.Record.user_id == user_id).filter(
-            models.Record.id == record.id).filter(
-            models.Record.status != 99).first()
+        record_data = (
+            db.query(models.Record)
+            .filter(models.Record.form_id == form_id)
+            .filter(models.Record.week == week)
+            .filter(models.Record.user_id == user_id)
+            .filter(models.Record.id == record.id)
+            .filter(models.Record.status != 99)
+            .first()
+        )
         if not record_data:
             raise HTTPException(404, "Record not found")
         record_data.status = record.status.value
@@ -66,41 +73,52 @@ def post_form_record(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
         db.commit()
         return record_data.as_dict()
     else:
-        record_data = models.Record(form_id=form_id, month=record.month, week=week, boss=boss,
-                                    status=record.status.value, damage=record.damage, comment=record.comment, user_id=user_id)
+        record_data = models.Record(
+            form_id=form_id,
+            month=record.month,
+            week=week,
+            boss=boss,
+            status=record.status.value,
+            damage=record.damage,
+            comment=record.comment,
+            user_id=user_id,
+        )
         db.add(record_data)
         db.commit()
     return record_data.as_dict()
 
 
 @router.post("/bot/forms/create", response_model=schemas.Form, tags=["Bot"])
-def create_form(data: schemas.CreateForm = ...,
-                x_token: bool = Depends(check_x_token),
-                user_id: str = Query(..., min_length=6, max_length=16),
-                db: Session = Depends(get_db)):
+def create_form(
+    data: schemas.CreateForm = ...,
+    x_token: bool = Depends(check_x_token),
+    user_id: str = Query(..., min_length=6, max_length=16),
+    db: Session = Depends(get_db),
+):
     """
     Create a new form
     """
     user_id = oauth.get_user_id(user_id)
-    new_form = models.Form(month=data.month, owner_id=user_id,
-                           title=data.title, description=data.description, id=uuid.uuid4().hex)
+    new_form = models.Form(
+        month=data.month, owner_id=user_id, title=data.title, description=data.description, id=uuid.uuid4().hex
+    )
     db.add(new_form)
     db.commit()
     return new_form.as_dict()
 
 
 @router.post("/bot/forms/modify", response_model=schemas.Form, tags=["Bot"])
-def modify_form(data: schemas.EditForm = ...,
-                x_token: bool = Depends(check_x_token),
-                user_id: str = Query(..., min_length=6, max_length=16),
-                db: Session = Depends(get_db)):
+def modify_form(
+    data: schemas.Form = ...,
+    x_token: bool = Depends(check_x_token),
+    user_id: str = Query(..., min_length=6, max_length=16),
+    db: Session = Depends(get_db),
+):
     """
     Modify form
     """
     user_id = oauth.get_user_id(user_id)
-    form = db.query(models.Form).filter(
-        models.Form.id == data.id).filter(
-        models.Form.owner_id == user_id).first()
+    form = db.query(models.Form).filter(models.Form.id == data.id).filter(models.Form.owner_id == user_id).first()
     if not form:
         raise HTTPException(404, "Form not found")
     if data.month:
@@ -116,39 +134,47 @@ def modify_form(data: schemas.EditForm = ...,
 
 
 @router.get("/bot/isRegister", response_model=schemas.UserProfile, tags=["Bot"])
-def check_is_register(x_token: bool = Depends(check_x_token),
-                      platform: int = Query(..., ge=1, le=2),
-                      user_id: str = Query(..., min_length=18, max_length=40),
-                      db: Session = Depends(get_db)):
+def check_is_register(
+    x_token: bool = Depends(check_x_token),
+    platform: int = Query(..., ge=1, le=2),
+    user_id: str = Query(..., min_length=18, max_length=40),
+    db: Session = Depends(get_db),
+):
     """
     Check if the user is registered or not
     """
-    checkExist = db.query(models.OauthDetail).filter(
-        models.OauthDetail.platform == platform).filter(models.OauthDetail.id == user_id).first()
+    checkExist = (
+        db.query(models.OauthDetail)
+        .filter(models.OauthDetail.platform == platform)
+        .filter(models.OauthDetail.id == user_id)
+        .first()
+    )
     if not checkExist:
         raise HTTPException(404, "User not found")
     return checkExist.user.as_dict()
 
 
 @router.post("/bot/register", response_model=schemas.UserProfile, tags=["Bot"])
-def register_new_user(x_token: bool = Depends(check_x_token),
-                      user_data: schemas.BotRegister = ...,
-                      db: Session = Depends(get_db)):
+def register_new_user(
+    x_token: bool = Depends(check_x_token), user_data: schemas.BotRegister = ..., db: Session = Depends(get_db)
+):
     """ 
     Register a new user
     """
-    checkExist = db.query(models.OauthDetail).filter(
-        models.OauthDetail.platform == user_data.platform).filter(models.OauthDetail.id == user_data.user_id).first()
+    checkExist = (
+        db.query(models.OauthDetail)
+        .filter(models.OauthDetail.platform == user_data.platform)
+        .filter(models.OauthDetail.id == user_data.user_id)
+        .first()
+    )
     if checkExist:
         raise HTTPException(400, "User exist")
 
     if user_data.platform == 2:
-        newUser = models.User(
-            avatar=f"{user_data.avatar}.png", name=user_data.name)
+        newUser = models.User(avatar=f"{user_data.avatar}.png", name=user_data.name)
         db.add(newUser)
         db.flush()
-        OauthDetail = models.OauthDetail(
-            platform=2, id=user_data.user_id, user_id=newUser.id)
+        OauthDetail = models.OauthDetail(platform=2, id=user_data.user_id, user_id=newUser.id)
         db.add(OauthDetail)
         db.commit()
         return newUser.as_dict()
