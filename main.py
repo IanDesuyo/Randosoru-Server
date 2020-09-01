@@ -4,28 +4,22 @@ from fastapi import FastAPI, Query, Path, Body, HTTPException, Depends
 
 # CORS
 from fastapi.middleware.cors import CORSMiddleware
-origins = [
-    "http://localhost",
-    "http://localhost:3000",
-    "https://test.randosoru.me"
-]
+
+origins = ["http://localhost", "http://localhost:3000", "https://test.randosoru.me"]
 #
 
-app = FastAPI(openapi_prefix="/api",
-              title="Randosoru",
-              description="API documents for guild.randosoru.me",
-              version="0.2.3",
-              docs_url=None,
-              redoc_url="/doc"
-              )
+app = FastAPI(
+    openapi_prefix="/api",
+    title="Randosoru",
+    description="API documents for guild.randosoru.me",
+    version="0.3.0",
+    docs_url=None,
+    redoc_url="/doc",
+)
 
 # CORS
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
 )
 #
 

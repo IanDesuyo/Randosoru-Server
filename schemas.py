@@ -64,8 +64,10 @@ class Record(BaseModel):
     class Config:
         orm_mode = True
 
+
 class WeekRecord(Record):
     boss: int
+
 
 class AllRecord(WeekRecord):
     week: int
@@ -96,17 +98,23 @@ class CreateForm(BaseModel):
     description: str = Field(None, max_length=40)
 
 
-class EditForm(BaseModel):
-    id: str = Field(None, regex="^[0-9a-fA-F]{32}$")
-    month: str = Field(None, regex="^(20\d{2})(1[0-2]|0[1-9])$")
-    title: str = Field(None, max_length=20)
-    description: str = Field(None, max_length=40)
-    status: FormStatus = None
+class BossSetting(BaseModel):
+    boss: int = Field(..., ge=1, le=5)
+    name: str = Field(..., max_length=20)
+    image: str = Field(..., max_length=40)
 
 
 class Form(CreateForm):
-    id: str = Field(None, regex="^[0-9a-fA-F]{32}$")
+    owner_id: str
+    id: str = Field(..., regex="^[0-9a-fA-F]{32}$")
     status: FormStatus
+    boss: List[BossSetting] = None
+
+
+class FormModify(BaseModel):
+    title: str = Field(None, max_length=20)
+    description: str = Field(None, max_length=40)
+    boss: List[BossSetting] = None
 
 
 class CheckRegister(BaseModel):
