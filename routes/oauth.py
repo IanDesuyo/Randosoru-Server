@@ -29,6 +29,8 @@ def get_db():
 
 
 def get_current_user_id(token: str = Depends(oauth2_scheme)):
+    if token in config.API_TOKEN:
+        return 0
     try:
         payload = jwt.decode(token, config.JWT_SECRET, algorithms="HS256")
     except ExpiredSignatureError:
@@ -151,7 +153,7 @@ async def line_oauth(code: str, db: Session = Depends(get_db)):
 
     # not exist, create one
     if not OauthDetail:
-        newUser = models.User(avatar=f"{resp['pictureUrl']}.png", name=resp["displayName"])
+        newUser = models.User(avatar=f"{resp.get('pictureUrl')}.png", name=resp["displayName"])
         db.add(newUser)
         db.flush()
         OauthDetail = models.OauthDetail(platform=2, id=resp["userId"], user_id=newUser.id)
@@ -162,7 +164,7 @@ async def line_oauth(code: str, db: Session = Depends(get_db)):
         if OauthDetail.user.status != 0:
             raise HTTPException(403, "You have been banned")
         # update account
-        OauthDetail.user.avatar = f"{resp['pictureUrl']}.png"
+        OauthDetail.user.avatar = f"{resp.get('pictureUrl')}.png"
         OauthDetail.user.name = resp["displayName"]
         db.commit()
 
@@ -194,7 +196,7 @@ async def line_liff_oauth(access_token: str, db: Session = Depends(get_db)):
 
     # not exist, create one
     if not OauthDetail:
-        newUser = models.User(avatar=f"{resp['pictureUrl']}.png", name=resp["displayName"])
+        newUser = models.User(avatar=f"{resp.get('pictureUrl')}.png", name=resp["displayName"])
         db.add(newUser)
         db.flush()
         OauthDetail = models.OauthDetail(platform=2, id=resp["userId"], user_id=newUser.id)
@@ -205,7 +207,7 @@ async def line_liff_oauth(access_token: str, db: Session = Depends(get_db)):
         if OauthDetail.user.status != 0:
             raise HTTPException(403, "You have been banned")
         # update account
-        OauthDetail.user.avatar = f"{resp['pictureUrl']}.png"
+        OauthDetail.user.avatar = f"{resp.get('pictureUrl')}.png"
         OauthDetail.user.name = resp["displayName"]
         db.commit()
 

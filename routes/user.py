@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Path, Query
 from sqlalchemy.orm import Session
-
+from sqlalchemy import text
+from datetime import date, timedelta
 from typing import List
 import schemas
 import models
@@ -68,10 +69,51 @@ def get_user_profile_slim(user_id: str = Path(..., min_length=6, max_length=16),
 
 @router.get("/users/me/records", response_model=List[schemas.Record], tags=["Users", "Records"])
 def get_my_records(
-    user_id: int = Depends(oauth.get_current_user_id), page: int = Query(1, ge=0, le=100), db: Session = Depends(get_db)
+    user_id: int = Depends(oauth.get_current_user_id),
+    # page: int = Query(1, ge=0, le=100),
+    form_id: str = Query(None, regex="^[0-9a-fA-F]{32}$"),
+    date: date = Query(None),
+    db: Session = Depends(get_db),
 ):
     """
     Get current user's records
     """
-    records = db.query(models.Record).filter(models.Record.user_id == user_id).all().limit(10).offset((page - 1) * 10)
-    return {i.as_dict() for i in records}
+    records = (
+        db.query(models.Record).filter(models.Record.user_id == user_id)
+        # .limit(50)
+        # .offset((page - 1) * 50)
+    )
+    if form_id:
+        records = records.filter(models.Record.form_id == form_id)
+    if date:
+        records = records.filter(models.Record.last_modified > date).filter(
+            models.Record.last_modified < date + timedelta(hours=24)
+        )
+    return [i.as_dict() for i in records]
+
+
+@router.get("/users/{user_id}/records", response_model=List[schemas.Record], tags=["Users", "Records"])
+def get_user_records(
+    user_id: str = Path(..., min_length=6, max_length=16),
+    # page: int = Query(1, ge=0, le=100),
+    form_id: str = Query(None, regex="^[0-9a-fA-F]{32}$"),
+    date: date = Query(None),
+    db: Session = Depends(get_db),
+):
+    """
+    Get specific user's records
+    """
+    user_id = oauth.get_user_id(user_id)
+
+    records = (
+        db.query(models.Record).filter(models.Record.user_id == user_id)
+        # .limit(50)
+        # .offset((page - 1) * 50)
+    )
+    if form_id:
+        records = records.filter(models.Record.form_id == form_id)
+    if date:
+        records = records.filter(models.Record.last_modified > date).filter(
+            models.Record.last_modified < date + timedelta(hours=24)
+        )
+    return [i.as_dict() for i in records]

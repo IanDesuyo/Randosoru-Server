@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends, Path
+from fastapi import APIRouter, HTTPException, Depends, Path, Query
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import uuid
 import config
 import schemas
@@ -159,12 +159,18 @@ def get_form_record(
 def get_form_record(
     form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
     user_id: int = Depends(oauth.get_current_user_id),
+    date: date = Query(None),
     db: Session = Depends(get_db),
 ):
     """
     Get all records from specific form id
     """
-    records = db.query(models.Record).filter(models.Record.form_id == form_id).filter(models.Record.status != 99).all()
+    records = db.query(models.Record).filter(models.Record.form_id == form_id).filter(models.Record.status != 99)
+    if date:
+        records = records.filter(models.Record.last_modified > date).filter(
+            models.Record.last_modified < date + timedelta(hours=24)
+        )
+
     return [i.as_dict() for i in records]
 
 
