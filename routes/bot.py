@@ -34,7 +34,7 @@ def check_x_token(x_token: str = Header(...)):
 @router.post("/bot/forms/{form_id}/week/{week}/boss/{boss}", response_model=schemas.Record, tags=["Bot"])
 def post_form_record(
     form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
-    week: int = Path(..., ge=1, le=100),
+    week: int = Path(..., ge=1, le=200),
     boss: int = Path(..., ge=1, le=5),
     x_token: bool = Depends(check_x_token),
     record: schemas.PostRecord = ...,
