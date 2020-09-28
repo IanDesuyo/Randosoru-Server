@@ -36,9 +36,9 @@ def get_form(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"), db: Session = 
 
     boss = db.query(models.FormBoss).filter(models.FormBoss.form_id == form_id).limit(5)
     data = form.as_dict()
-    bossSet = config.BOSS_SETTING.get(form.month)
+    bossSet = config.BOSS_SETTING.get(form.month).copy()
     if not bossSet:
-        bossSet = config.BOSS_SETTING.get(0)
+        bossSet = config.BOSS_SETTING.get(0).copy()
     for i in boss:
         bossSet[i.boss - 1] = {"boss": i.boss, "name": i.name, "image": i.image}
     data["boss"] = bossSet
@@ -106,9 +106,9 @@ def modify_form(
     data = form.as_dict()
 
     boss = db.query(models.FormBoss).filter(models.FormBoss.form_id == form_id).limit(5)
-    bossSet = config.BOSS_SETTING.get(form.month)
+    bossSet = config.BOSS_SETTING.get(form.month).copy()
     if not bossSet:
-        bossSet = config.BOSS_SETTING.get(0)
+        bossSet = config.BOSS_SETTING.get(0).copy()
     for i in boss:
         bossSet[i.boss - 1] = {"boss": i.boss, "name": i.name, "image": i.image}
     data["boss"] = bossSet
