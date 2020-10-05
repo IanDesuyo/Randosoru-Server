@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, HTTPException, Depends, Path, Query
 from sqlalchemy.orm import Session
 from datetime import datetime, date, timedelta
@@ -8,6 +9,9 @@ import models
 from typing import List
 from database import SessionLocal, engine
 from routes import oauth
+from routes.sio_router import sio
+from fastapi.encoders import jsonable_encoder
+
 
 router = APIRouter()
 
@@ -22,67 +26,78 @@ def get_db():
         db.close()
 
 
-# Router
-
-
-@router.get("/forms/{form_id}", response_model=schemas.Form, tags=["Forms"])
-def get_form(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"), db: Session = Depends(get_db)):
-    """
-    Get form details
-    """
+def get_form_details(db: Session, form_id: str):
     form = db.query(models.Form).filter(models.Form.id == form_id).first()
     if not form:
-        raise HTTPException(404, "Form not found")
+        raise HTTPException(404, "Form Not Exist")
 
     boss = db.query(models.FormBoss).filter(models.FormBoss.form_id == form_id).limit(5)
     data = form.as_dict()
-    bossSet = config.BOSS_SETTING.get(form.month).copy()
-    if not bossSet:
+    temp = config.BOSS_SETTING.get(form.month)
+    if not temp:
         bossSet = config.BOSS_SETTING.get(0).copy()
+    else:
+        bossSet = temp.copy()
     for i in boss:
-        bossSet[i.boss - 1] = {"boss": i.boss, "name": i.name, "image": i.image}
+        bossSet[i.boss - 1] = {"boss": i.boss, "name": i.name, "image": i.image, "hp": [i.hp1, i.hp2, i.hp3, i.hp4]}
     data["boss"] = bossSet
     return data
 
 
-@router.post("/forms/create", response_model=schemas.Form, tags=["Forms"], deprecated=True)
-def create_form(
-    data: schemas.CreateForm = None, user_id: int = Depends(oauth.get_current_user_id), db: Session = Depends(get_db)
-):
-    """
-    **deprecated**\n
-    Create a new form
-    """
-    raise HTTPException(400, "Deprecated")
-    if not data:
-        raise HTTPException(400, "Missing Form data")
-    new_form = models.Form(
-        month=data.month, owner_id=user_id, title=data.title, description=data.description, id=uuid.uuid4().hex
-    )
-    db.add(new_form)
-    db.commit()
-    return new_form.as_dict()
+# Router
 
 
-@router.post("/forms/{form_id}/modify", response_model=schemas.Form, tags=["Forms"])
-def modify_form(
+@router.get(
+    "/forms/{form_id}", response_model=schemas.Form, tags=["Forms"], responses={404: {"description": "Form Not Exist"}}
+)
+async def get_form(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"), db: Session = Depends(get_db)):
+    """
+    Get form details
+    """
+    return get_form_details(db, form_id)
+
+
+# @router.post(
+#     "/forms/create",
+#     response_model=schemas.Form,
+#     tags=["Forms"],
+#     responses=oauth.oauthFailResponses,
+# )
+# async def create_form(
+#     data: schemas.CreateForm = ..., user_id: int = Depends(oauth.get_current_user_id), db: Session = Depends(get_db)
+# ):
+#     """
+#     Create a new form
+#     """
+#     new_form = models.Form(
+#         month=data.month, owner_id=user_id, title=data.title, description=data.description, id=uuid.uuid4().hex
+#     )
+#     db.add(new_form)
+#     db.commit()
+#     return new_form.as_dict()
+
+
+@router.post(
+    "/forms/{form_id}/modify",
+    tags=["Forms"],
+    response_model=schemas.Sucess,
+    responses={**oauth.oauthFailResponses, 403: {"description": "Not Owner"}, 404: {"description": "Form Not Exist"}},
+)
+async def modify_form(
     form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
-    data: schemas.FormModify = None,
+    data: schemas.FormModify = ...,
     user_id: int = Depends(oauth.get_current_user_id),
     db: Session = Depends(get_db),
 ):
     """
     Modify form
     """
-    if not data:
-        raise HTTPException(400, "Missing data")
-    if len(data.boss) > 5:
-        raise HTTPException(422, "Too many boss settings")
-    form = db.query(models.Form).filter(models.Form.id == form_id).filter(models.Form.owner_id == user_id).first()
+    form = db.query(models.Form).filter(models.Form.id == form_id).first()
     if not form:
-        raise HTTPException(404, "Form not found")
-    print(data)
-    print(form.__dict__)
+        raise HTTPException(404, "Form Not Exist")
+    if form.owner_id != user_id:
+        raise HTTPException(403, "Not Owner")
+
     if data.title:
         form.title = data.title
     if data.description:
@@ -98,25 +113,30 @@ def modify_form(
             if boss:
                 boss.name = i.name
                 boss.image = i.image
+                boss.hp1 = i.hp[0]
+                boss.hp2 = i.hp[1]
+                boss.hp3 = i.hp[2]
+                boss.hp4 = i.hp[3]
                 db.flush()
             else:
-                boss = models.FormBoss(form_id=form_id, boss=i.boss, name=i.name, image=i.image)
+                boss = models.FormBoss(
+                    form_id=form_id,
+                    boss=i.boss,
+                    name=i.name,
+                    image=i.image,
+                    hp1=i.hp[0],
+                    hp2=i.hp[1],
+                    hp3=i.hp[2],
+                    hp4=i.hp[3],
+                )
                 db.add(boss)
     db.commit()
-    data = form.as_dict()
-
-    boss = db.query(models.FormBoss).filter(models.FormBoss.form_id == form_id).limit(5)
-    bossSet = config.BOSS_SETTING.get(form.month).copy()
-    if not bossSet:
-        bossSet = config.BOSS_SETTING.get(0).copy()
-    for i in boss:
-        bossSet[i.boss - 1] = {"boss": i.boss, "name": i.name, "image": i.image}
-    data["boss"] = bossSet
-    return data
+    await sio.emit("FormTracker", {"type": "modify", "message": "Form has been modified"}, room=form_id)
+    return {"detail": "Sucess"}
 
 
 @router.get("/forms/{form_id}/week/{week}", response_model=List[schemas.WeekRecord], tags=["Forms", "Records"])
-def get_form_record_by_week(
+async def get_form_record_by_week(
     form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
     week: int = Path(..., ge=1, le=200),
     db: Session = Depends(get_db),
@@ -135,7 +155,7 @@ def get_form_record_by_week(
 
 
 @router.get("/forms/{form_id}/week/{week}/boss/{boss}", response_model=List[schemas.Record], tags=["Forms", "Records"])
-def get_form_record(
+async def get_form_record(
     form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
     week: int = Path(..., ge=1, le=200),
     boss: int = Path(..., ge=1, le=5),
@@ -155,11 +175,17 @@ def get_form_record(
     return [i.as_dict() for i in records]
 
 
-@router.get("/forms/{form_id}/all", response_model=List[schemas.AllRecord], tags=["Forms", "Records"])
-def get_form_record(
+@router.get(
+    "/forms/{form_id}/all",
+    response_model=List[schemas.AllRecord],
+    tags=["Forms", "Records"],
+    responses=oauth.oauthFailResponses,
+)
+async def get_all_form_record(
     form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
     user_id: int = Depends(oauth.get_current_user_id),
     date: date = Query(None),
+    created_at: date = Query(None),
     db: Session = Depends(get_db),
 ):
     """
@@ -170,12 +196,25 @@ def get_form_record(
         records = records.filter(models.Record.last_modified > date).filter(
             models.Record.last_modified < date + timedelta(hours=24)
         )
+    if created_at:
+        records = records.filter(models.Record.created_at > created_at).filter(
+            models.Record.created_at < created_at + timedelta(hours=24)
+        )
 
     return [i.as_dict() for i in records]
 
 
-@router.post("/forms/{form_id}/week/{week}/boss/{boss}", response_model=schemas.Record, tags=["Forms", "Records"])
-def post_form_record(
+@router.post(
+    "/forms/{form_id}/week/{week}/boss/{boss}",
+    response_model=schemas.Record,
+    tags=["Forms", "Records"],
+    responses={
+        **oauth.oauthFailResponses,
+        403: {"description": "Form Locked"},
+        404: {"description": "Form Not Exist / Record Not Exist"},
+    },
+)
+async def post_form_record(
     form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
     week: int = Path(..., ge=1, le=200),
     boss: int = Path(..., ge=1, le=5),
@@ -185,46 +224,47 @@ def post_form_record(
 ):
     """
     Add or update a record\n
-    It will try to update exist record if request include an id. 
+    It will try to update exist record if request include an id.
     """
-    if not record:
-        raise HTTPException(400, "Missing Record data")
     formData = db.query(models.Form).filter(models.Form.id == form_id).first()
     if not formData:
-        raise HTTPException(404, "Form not found")
+        raise HTTPException(404, "Form Not Exist")
     if formData.status != 0:
-        raise HTTPException(403, "Form locked")
+        raise HTTPException(403, "Form Locked")
 
     if record.id:
         record_data = (
             db.query(models.Record)
             .filter(models.Record.form_id == form_id)
-            .filter(models.Record.week == week)
             .filter(models.Record.user_id == user_id)
             .filter(models.Record.id == record.id)
             .filter(models.Record.status != 99)
             .first()
         )
         if not record_data:
-            raise HTTPException(404, "Record not found")
+            raise HTTPException(404, "Record Not Exist")
+
         record_data.status = record.status.value
         record_data.damage = record.damage
         record_data.comment = record.comment
         record_data.last_modified = datetime.utcnow()
         db.commit()
-        return record_data.as_dict()
+        data = jsonable_encoder(schemas.AllRecord(**record_data.as_dict()))
+        await sio.emit("FormTracker", {"type": "RecUP", "data": data}, room=form_id)
+        return data
     else:
         record_data = models.Record(
             form_id=form_id,
-            month=record.month,
+            month=record.month if record.month else formData.month,
             week=week,
             boss=boss,
             status=record.status.value,
             damage=record.damage,
             comment=record.comment,
             user_id=user_id,
-            last_modified=datetime.utcnow(),
         )
         db.add(record_data)
         db.commit()
-    return record_data.as_dict()
+    data = jsonable_encoder(schemas.AllRecord(**record_data.as_dict()))
+    await sio.emit("FormTracker", {"type": "RecNEW", "data": data}, room=form_id)
+    return data

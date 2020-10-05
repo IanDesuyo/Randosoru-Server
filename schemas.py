@@ -9,9 +9,13 @@ class OauthReturn(BaseModel):
     token: str
 
 
+class Sucess(BaseModel):
+    detail: str = "Sucess"
+
+
 class User(BaseModel):
     id: str
-    avatar: str = "https://i.imgur.com/e4KrYHe.png"
+    avatar: str = None
     name: str
     uid: PositiveInt = None
 
@@ -59,6 +63,7 @@ class Record(BaseModel):
     comment: str = None
     team: List[RecordTeam] = None
     last_modified: PositiveInt
+    created_at: PositiveInt
     user: User
 
     class Config:
@@ -81,11 +86,6 @@ class PostRecord(BaseModel):
     comment: str = Field(None, max_length=40)
 
 
-class PostSucess(BaseModel):
-    target_id: str = None
-    detail: str = "Sucess"
-
-
 class FormStatus(int, Enum):
     readWrite = 0
     read = 1
@@ -99,9 +99,10 @@ class CreateForm(BaseModel):
 
 
 class BossSetting(BaseModel):
+    hp: List[int] = Field(..., ge=1, le=100000000, min_items=4, max_items=4)
     boss: int = Field(..., ge=1, le=5)
     name: str = Field(..., max_length=20)
-    image: str = Field(..., max_length=40)
+    image: str = Field(..., max_length=100)
 
 
 class Form(CreateForm):
@@ -114,7 +115,7 @@ class Form(CreateForm):
 class FormModify(BaseModel):
     title: str = Field(None, max_length=20)
     description: str = Field(None, max_length=40)
-    boss: List[BossSetting] = None
+    boss: List[BossSetting] = Field(None, max_items=5)
 
 
 class CheckRegister(BaseModel):
