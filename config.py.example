@@ -1,0 +1,67 @@
+# =================================
+# MODIFY IT AND RENAME TO config.py
+# =================================
+
+
+class Discord:
+    API_ENDPOINT = "https://discordapp.com/api/v6"
+    CLIENT_ID = "123456789123456789"
+    CLIENT_SECRET = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    REDIRECT_URL = "https://guild.randosoru.me/login/oauth/discord"
+
+
+class Line:
+    API_ENDPOINT = "https://api.line.me/v2"
+    CLIENT_ID = "1234567890"
+    CLIENT_SECRET = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    REDIRECT_URL = "https://guild.randosoru.me/login/oauth/line"
+
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///./app.db"
+JWT_SECRET = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+ID_SECRET = "XXXXXXXX"
+
+API_TOKEN = ["XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"]
+
+BOSS_SETTING = {
+    # Default
+    0: [
+        {"boss": 1, "name": "一王", "image": "", "hp": [6000000, 6000000, 7000000, 15000000]},
+        {"boss": 2, "name": "二王", "image": "", "hp": [8000000, 8000000, 9000000, 16000000]},
+        {"boss": 3, "name": "三王", "image": "", "hp": [10000000, 10000000, 13000000, 18000000]},
+        {"boss": 4, "name": "四王", "image": "", "hp": [12000000, 12000000, 15000000, 19000000]},
+        {"boss": 5, "name": "五王", "image": "", "hp": [15000000, 15000000, 20000000, 20000000]},
+    ],
+    202007: [
+        {
+            "boss": 1,
+            "name": "飛龍",
+            "image": "https://i.imgur.com/31Dxxf9.png",
+            "hp": [6000000, 6000000, 7000000, 15000000],
+        },
+        {
+            "boss": 2,
+            "name": "雷雷",
+            "image": "https://i.imgur.com/D774xtx.png",
+            "hp": [8000000, 8000000, 9000000, 16000000],
+        },
+        {
+            "boss": 3,
+            "name": "希德雷克",
+            "image": "https://i.imgur.com/ecI6J5e.png",
+            "hp": [10000000, 10000000, 13000000, 18000000],
+        },
+        {
+            "boss": 4,
+            "name": "夢魘",
+            "image": "https://i.imgur.com/Z25jZPu.png",
+            "hp": [12000000, 12000000, 15000000, 19000000],
+        },
+        {
+            "boss": 5,
+            "name": "托爾披頓",
+            "image": "https://i.imgur.com/kO1XziX.png",
+            "hp": [15000000, 15000000, 20000000, 20000000],
+        },
+    ],
+}
