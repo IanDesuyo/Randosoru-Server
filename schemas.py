@@ -124,5 +124,5 @@ class CheckRegister(BaseModel):
 
 
 class BotRegister(CheckRegister):
-    avatar: str = Field(None, max_length=140)
+    avatar: str = Field(None, max_length=200)
     name: str = Field(..., max_length=40)

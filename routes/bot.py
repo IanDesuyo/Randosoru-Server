@@ -81,7 +81,7 @@ async def post_form_record(
         record_data.comment = record.comment
         record_data.last_modified = datetime.utcnow()
         db.commit()
-        data = jsonable_encoder(schemas.Record(**record_data.as_dict()))
+        data = jsonable_encoder(schemas.AllRecord(**record_data.as_dict()))
         await sio.emit("FormTracker", {"type": "RecUP", "data": data}, room=form_id)
         return data
     else:
@@ -97,7 +97,7 @@ async def post_form_record(
         )
         db.add(record_data)
         db.commit()
-    data = jsonable_encoder(schemas.Record(**record_data.as_dict()))
+    data = jsonable_encoder(schemas.AllRecord(**record_data.as_dict()))
     await sio.emit("FormTracker", {"type": "RecNEW", "data": data}, room=form_id)
     return data
 

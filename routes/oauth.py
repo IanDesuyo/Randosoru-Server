@@ -48,7 +48,7 @@ def bot_get_user_id(user_id: str = Query(..., min_length=6, max_length=16)):
     return get_user_id(user_id)
 
 
-def generate_jwt_token(user_id: int, expire: datetime = datetime.utcnow() + timedelta(days=7)):
+def generate_jwt_token(user_id: int, expire: datetime = datetime.now() + timedelta(days=7)):
     user_id = hashids.encode(user_id)
     token = jwt.encode({"id": user_id, "exp": expire}, config.JWT_SECRET, algorithm="HS256").decode("utf-8")
     return {"id": user_id, "token": token}

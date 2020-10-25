@@ -95,8 +95,8 @@ async def modify_form(
     form = db.query(models.Form).filter(models.Form.id == form_id).first()
     if not form:
         raise HTTPException(404, "Form Not Exist")
-    if form.owner_id != user_id:
-        raise HTTPException(403, "Not Owner")
+    # if form.owner_id != user_id:
+    #     raise HTTPException(403, "Not Owner")
 
     if data.title:
         form.title = data.title

@@ -19,7 +19,7 @@ class User(Base):
     __tablename__ = "Users"
 
     id = Column(Integer, primary_key=True, unique=True, autoincrement=True, index=True)
-    avatar = Column(String(120), nullable=True)
+    avatar = Column(String(200), nullable=True)
     name = Column(String(40))
     uid = Column(Integer, nullable=True, index=True)
     created_at = Column(DateTime, server_default=utcnow())
