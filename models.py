@@ -11,7 +11,7 @@ class utcnow(expression.FunctionElement):
 
 
 @compiles(utcnow, "mysql")
-def pg_utcnow(element, compiler, **kw):
+def mysql_utcnow(element, compiler, **kw):
     return "UTC_TIMESTAMP()"
 
 
