@@ -5,15 +5,12 @@ import uuid
 import config
 import schemas
 import models
-from typing import List
-from database import SessionLocal, engine
+from database import SessionLocal
 from routes import oauth
 from routes.sio_router import sio
 from fastapi.encoders import jsonable_encoder
 
 router = APIRouter()
-
-models.Base.metadata.create_all(bind=engine)
 
 
 async def get_db():
@@ -79,6 +76,7 @@ async def post_form_record(
         record_data.status = record.status.value
         record_data.damage = record.damage
         record_data.comment = record.comment
+        record_data.team = jsonable_encoder(record.team)
         record_data.last_modified = datetime.utcnow()
         db.commit()
         data = jsonable_encoder(schemas.AllRecord(**record_data.as_dict()))
@@ -94,6 +92,7 @@ async def post_form_record(
             damage=record.damage,
             comment=record.comment,
             user_id=user_id,
+            team=jsonable_encoder(record.team),
         )
         db.add(record_data)
         db.commit()

@@ -1,18 +1,15 @@
 from fastapi import APIRouter, HTTPException, Depends, Path, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 from datetime import date, datetime, timedelta
 from typing import List
 
 from starlette import responses
 import schemas
 import models
-from database import SessionLocal, engine
+from database import SessionLocal
 from routes import oauth
 
 router = APIRouter()
-
-models.Base.metadata.create_all(bind=engine)
 
 
 def get_db():

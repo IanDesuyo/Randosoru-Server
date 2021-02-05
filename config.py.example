@@ -16,12 +16,15 @@ class Line:
     CLIENT_SECRET = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     REDIRECT_URL = "https://guild.randosoru.me/login/oauth/line"
 
+DB_USER = "USERNAME"
+DB_PASSWORD = "PASSWORD"
+DB_HOST = "localhost" # The IP of MySQL server. If you're using Docker, you can set it to the name of the MySQL container and add this container to the same network
+DB_NAME = "NAME"
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./app.db"
-JWT_SECRET = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-ID_SECRET = "XXXXXXXX"
+JWT_SECRET = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" # JWT Token
+ID_SECRET = "XXXXXXXX" # For hashids
 
-API_TOKEN = ["XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"]
+API_TOKEN = ["XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"] # The token required when using path /bot
 
 BOSS_SETTING = {
     # Default
@@ -32,12 +35,13 @@ BOSS_SETTING = {
         {"boss": 4, "name": "四王", "image": "", "hp": [12000000, 12000000, 15000000, 19000000]},
         {"boss": 5, "name": "五王", "image": "", "hp": [15000000, 15000000, 20000000, 20000000]},
     ],
+    # YYYYMM
     202007: [
         {
             "boss": 1,
             "name": "飛龍",
             "image": "https://i.imgur.com/31Dxxf9.png",
-            "hp": [6000000, 6000000, 7000000, 15000000],
+            "hp": [6000000, 6000000, 7000000, 15000000], # Stage 1 to 4
         },
         {
             "boss": 2,

@@ -10,13 +10,11 @@ from hashids import Hashids
 import config
 import schemas
 import models
-from database import SessionLocal, engine
+from database import SessionLocal
 
 router = APIRouter()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
-
-models.Base.metadata.create_all(bind=engine)
 
 hashids = Hashids(salt=config.ID_SECRET, min_length=6)
 

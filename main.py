@@ -1,18 +1,22 @@
 from routes import oauth, user, bot, form, sio_router
 from fastapi import FastAPI
 import socketio
+import models
+from database import engine
 
 # CORS
 from fastapi.middleware.cors import CORSMiddleware
+
+models.Base.metadata.create_all(bind=engine)
 
 origins = ["http://localhost", "http://localhost:3000", "https://test.randosoru.me"]
 #
 
 app = FastAPI(
-    openapi_prefix="/api",
+    root_path="/api",
     title="Randosoru",
     description="API documents for guild.randosoru.me",
-    version="0.4.0",
+    version="0.5.0",
     docs_url=None,
     redoc_url="/doc",
 )

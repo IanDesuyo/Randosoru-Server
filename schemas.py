@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, PositiveInt
-from typing import List, Set, Optional, Union
+from typing import List
 from datetime import datetime
 from enum import Enum
 
@@ -61,7 +61,7 @@ class Record(BaseModel):
     status: int
     damage: PositiveInt = None
     comment: str = None
-    team: List[RecordTeam] = None
+    team: List[RecordTeam] = Field(None, max_items=5)
     last_modified: PositiveInt
     created_at: PositiveInt
     user: User
@@ -84,6 +84,7 @@ class PostRecord(BaseModel):
     status: RecordStatus
     damage: int = Field(None, ge=1, le=20000000)
     comment: str = Field(None, max_length=40)
+    team: List[RecordTeam] = Field(None, max_items=5)
 
 
 class FormStatus(int, Enum):
@@ -99,7 +100,7 @@ class CreateForm(BaseModel):
 
 
 class BossSetting(BaseModel):
-    hp: List[int] = Field(..., ge=1, le=100000000, min_items=4, max_items=4)
+    hp: List[int] = Field(..., ge=1, le=500000000, min_items=4, max_items=4)
     boss: int = Field(..., ge=1, le=5)
     name: str = Field(..., max_length=20)
     image: str = Field(..., max_length=100)

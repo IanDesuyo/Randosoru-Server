@@ -1,21 +1,19 @@
-import json
 from fastapi import APIRouter, HTTPException, Depends, Path, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from datetime import datetime, date, timedelta
 import uuid
 import config
 import schemas
 import models
 from typing import List
-from database import SessionLocal, engine
+from database import SessionLocal
 from routes import oauth
 from routes.sio_router import sio
 from fastapi.encoders import jsonable_encoder
 
 
 router = APIRouter()
-
-models.Base.metadata.create_all(bind=engine)
 
 
 def get_db():
@@ -56,6 +54,28 @@ async def get_form(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"), db: Sess
     """
     return get_form_details(db, form_id)
 
+
+@router.get(
+    "/forms/{form_id}/status",
+    tags=["Forms"],
+    responses={404: {"description": "Form Not Exist"}},
+)
+async def get_form_status(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"), db: Session = Depends(get_db)):
+    """
+    Get form details
+    """
+    data = (
+        db.query(models.Record.week, func.count(models.Record.user_id))
+        .filter(models.Record.form_id == form_id)
+        .group_by(models.Record.week)
+    )
+
+    print(data)
+
+    return data
+
+
+# SELECT COUNT(`user_id`), week FROM `Records` WHERE `form_id` = 'd2ed4de53cb341a5b06b93af5859906c' GROUP BY `week`
 
 # @router.post(
 #     "/forms/create",
@@ -247,6 +267,7 @@ async def post_form_record(
         record_data.status = record.status.value
         record_data.damage = record.damage
         record_data.comment = record.comment
+        record_data.team = jsonable_encoder(record.team)
         record_data.last_modified = datetime.utcnow()
         db.commit()
         data = jsonable_encoder(schemas.AllRecord(**record_data.as_dict()))
@@ -262,6 +283,7 @@ async def post_form_record(
             damage=record.damage,
             comment=record.comment,
             user_id=user_id,
+            team=jsonable_encoder(record.team),
         )
         db.add(record_data)
         db.commit()

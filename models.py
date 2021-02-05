@@ -12,7 +12,7 @@ class utcnow(expression.FunctionElement):
 
 @compiles(utcnow, "mysql")
 def mysql_utcnow(element, compiler, **kw):
-    return "UTC_TIMESTAMP()"
+    return "CURRENT_TIMESTAMP"
 
 
 class User(Base):
