@@ -37,8 +37,11 @@ def db_get_user_records(
     created_at: datetime = None,
     limit: int = None,
     offest: int = None,
+    removed: bool = False,
 ):
-    records = db.query(models.Record).filter(models.Record.user_id == user_id)
+    records = (
+        db.query(models.Record).filter(models.Record.user_id == user_id).order_by(models.Record.last_modified.desc())
+    )
     if form_id:
         records = records.filter(models.Record.form_id == form_id)
     if date:
@@ -49,6 +52,8 @@ def db_get_user_records(
         records = records.filter(models.Record.created_at > created_at).filter(
             models.Record.created_at < created_at + timedelta(hours=24)
         )
+    if not removed:
+        records = records.filter(models.Record.status != 99)
     if limit:
         records = records.limit(limit)
     if offest:
@@ -95,13 +100,14 @@ def get_user_profile_slim(user_id: str = Path(..., min_length=6, max_length=16),
 
 @router.get(
     "/users/me/records",
-    response_model=List[schemas.Record],
+    response_model=List[schemas.AllRecord],
     tags=["Users", "Records"],
     responses=oauth.oauthFailResponses,
 )
 def get_my_records(
     user_id: int = Depends(oauth.get_current_user_id),
     form_id: str = Query(None, regex="^[0-9a-fA-F]{32}$"),
+    removed: bool = Query(None),
     date: date = Query(None),
     created_at: date = Query(None),
     limit: int = Query(None, ge=1),
@@ -111,15 +117,16 @@ def get_my_records(
     """
     Get current user's records
     """
-    return db_get_user_records(db, user_id, form_id, date, created_at, limit, offset)
+    return db_get_user_records(db, user_id, form_id, date, created_at, limit, offset, removed)
 
 
 @router.get(
-    "/users/{user_id}/records", response_model=List[schemas.Record], tags=["Users", "Records"], responses=responses
+    "/users/{user_id}/records", response_model=List[schemas.AllRecord], tags=["Users", "Records"], responses=responses
 )
 def get_user_records(
     user_id: str = Path(..., min_length=6, max_length=16),
     form_id: str = Query(None, regex="^[0-9a-fA-F]{32}$"),
+    removed: bool = Query(None),
     date: date = Query(None),
     created_at: date = Query(None),
     limit: int = Query(100, ge=1, le=100),
@@ -129,4 +136,4 @@ def get_user_records(
     """
     Get specific user's records
     """
-    return db_get_user_records(db, oauth.get_user_id(user_id), form_id, date, created_at, limit, offset)
+    return db_get_user_records(db, oauth.get_user_id(user_id), form_id, date, created_at, limit, offset, removed)

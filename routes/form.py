@@ -67,6 +67,7 @@ async def get_form_status(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"), d
     data = (
         db.query(models.Record.week, func.count(models.Record.user_id))
         .filter(models.Record.form_id == form_id)
+        .filter(models.Record.status != 99)
         .group_by(models.Record.week)
     )
 
@@ -179,6 +180,7 @@ async def get_form_record(
     form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"),
     week: int = Path(..., ge=1, le=200),
     boss: int = Path(..., ge=1, le=5),
+    user_id: str = Query(None, min_length=6, max_length=16),
     db: Session = Depends(get_db),
 ):
     """
@@ -190,9 +192,11 @@ async def get_form_record(
         .filter(models.Record.week == week)
         .filter(models.Record.boss == boss)
         .filter(models.Record.status != 99)
-        .all()
     )
-    return [i.as_dict() for i in records]
+    if user_id:
+        records = records.filter(models.Record.user_id == oauth.get_user_id(user_id))
+
+    return [i.as_dict() for i in records.all()]
 
 
 @router.get(
