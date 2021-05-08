@@ -71,12 +71,8 @@ async def get_form_status(form_id: str = Path(..., regex="^[0-9a-fA-F]{32}$"), d
         .group_by(models.Record.week)
     )
 
-    print(data)
-
     return data
 
-
-# SELECT COUNT(`user_id`), week FROM `Records` WHERE `form_id` = 'd2ed4de53cb341a5b06b93af5859906c' GROUP BY `week`
 
 # @router.post(
 #     "/forms/create",

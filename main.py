@@ -16,7 +16,7 @@ app = FastAPI(
     root_path="/api",
     title="Randosoru",
     description="API documents for guild.randosoru.me",
-    version="0.5.4",
+    version="0.5.5",
     docs_url=None,
     redoc_url="/doc",
 )
