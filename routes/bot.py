@@ -9,6 +9,7 @@ from database import SessionLocal
 from routes import oauth
 from routes.sio_router import sio
 from fastapi.encoders import jsonable_encoder
+from sqlalchemy import null
 
 router = APIRouter()
 
@@ -61,6 +62,7 @@ async def post_form_record(
     if formData.status != 0:
         raise HTTPException(403, "Form Locked")
 
+    teamJson = jsonable_encoder(record.team) if record.team else null()
     if record.id:
         record_data = (
             db.query(models.Record)
@@ -76,7 +78,7 @@ async def post_form_record(
         record_data.status = record.status.value
         record_data.damage = record.damage
         record_data.comment = record.comment
-        record_data.team = jsonable_encoder(record.team)
+        record_data.team = teamJson
         record_data.last_modified = datetime.utcnow()
         db.commit()
         data = jsonable_encoder(schemas.AllRecord(**record_data.as_dict()))
@@ -92,7 +94,7 @@ async def post_form_record(
             damage=record.damage,
             comment=record.comment,
             user_id=user_id,
-            team=jsonable_encoder(record.team),
+            team=teamJson,
         )
         db.add(record_data)
         db.commit()
@@ -162,6 +164,7 @@ async def modify_form(
                 boss.hp2 = i.hp[1]
                 boss.hp3 = i.hp[2]
                 boss.hp4 = i.hp[3]
+                boss.hp5 = i.hp[4]
                 db.flush()
             else:
                 boss = models.FormBoss(
@@ -173,6 +176,7 @@ async def modify_form(
                     hp2=i.hp[1],
                     hp3=i.hp[2],
                     hp4=i.hp[3],
+                    hp5=i.hp[4],
                 )
                 db.add(boss)
     db.commit()

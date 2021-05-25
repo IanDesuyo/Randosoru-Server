@@ -100,7 +100,7 @@ class CreateForm(BaseModel):
 
 
 class BossSetting(BaseModel):
-    hp: List[int] = Field(..., ge=1, le=500000000, min_items=4, max_items=4)
+    hp: List[int] = Field(..., ge=1, le=500000000, min_items=5, max_items=5)
     boss: int = Field(..., ge=1, le=5)
     name: str = Field(..., max_length=20)
     image: str = Field(..., max_length=100)

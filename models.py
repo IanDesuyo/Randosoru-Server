@@ -14,6 +14,10 @@ class utcnow(expression.FunctionElement):
 def mysql_utcnow(element, compiler, **kw):
     return "CURRENT_TIMESTAMP"
 
+@compiles(utcnow, "sqlite")
+def mysql_utcnow(element, compiler, **kw):
+    return "CURRENT_TIMESTAMP"
+
 
 class User(Base):
     __tablename__ = "Users"
@@ -80,6 +84,7 @@ class FormBoss(Base):
     hp2 = Column(Integer)
     hp3 = Column(Integer)
     hp4 = Column(Integer)
+    hp5 = Column(Integer)
 
     def __repr__(self):
         return "<FormBoss (%s)>" % self.form_id

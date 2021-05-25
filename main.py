@@ -16,7 +16,7 @@ app = FastAPI(
     root_path="/api",
     title="Randosoru",
     description="API documents for guild.randosoru.me",
-    version="0.5.5",
+    version="0.5.6",
     docs_url=None,
     redoc_url="/doc",
 )
@@ -40,3 +40,8 @@ app.include_router(bot.router)
 
 app.add_route("/socket.io/", route=sio_app, methods=["GET", "POST"])
 app.add_websocket_route("/socket.io/", sio_app)
+
+
+@app.get("/")
+def index():
+    return {"version": app.version}
