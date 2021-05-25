@@ -12,7 +12,7 @@ idna==2.9
 idna-ssl==1.1.0
 multidict==4.7.6
 pycparser==2.20
-pydantic==1.5.1
+pydantic==1.6.2
 PyJWT==1.7.1
 PyMySQL==0.9.3
 python-engineio==3.14.2
