@@ -23,6 +23,6 @@ SQLAlchemy-Utils==0.36.6
 starlette==0.13.2
 typing-extensions==3.7.4.2
 uvicorn==0.11.7
-websockets==8.1
+websockets==9.1
 yarl==1.4.2
 cryptography==3.3.2
