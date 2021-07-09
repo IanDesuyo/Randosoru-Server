@@ -233,11 +233,10 @@ async def register_new_user(
     if checkExist:
         raise HTTPException(400, "User Exist")
 
-    if user_data.platform == 2:
-        newUser = models.User(avatar=f"{user_data.avatar}.png" if user_data.avatar else None, name=user_data.name)
-        db.add(newUser)
-        db.flush()
-        OauthDetail = models.OauthDetail(platform=2, id=user_data.user_id, user_id=newUser.id)
-        db.add(OauthDetail)
-        db.commit()
-        return newUser.as_dict()
+    newUser = models.User(avatar=f"{user_data.avatar}.png" if user_data.avatar else None, name=user_data.name)
+    db.add(newUser)
+    db.flush()
+    OauthDetail = models.OauthDetail(platform=user_data.platform, id=user_data.user_id, user_id=newUser.id)
+    db.add(OauthDetail)
+    db.commit()
+    return newUser.as_dict()
