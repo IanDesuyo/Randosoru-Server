@@ -25,4 +25,4 @@ typing-extensions==3.7.4.2
 uvicorn==0.14.0
 websockets==9.1
 yarl==1.4.2
-cryptography==3.4.7
+cryptography==39.0.1
